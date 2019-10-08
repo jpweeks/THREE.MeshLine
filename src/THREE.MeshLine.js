@@ -10,6 +10,17 @@ var THREE = root.THREE || has_require && require('three')
 if( !THREE )
 	throw new Error( 'MeshLine requires three.js' )
 
+var ATTRIBUTES = [
+	['position', 'positions'],
+	['previous', 'previous'],
+	['next', 'next'],
+	['side', 'side'],
+	['width', 'width'],
+	['uv', 'uvs'],
+	['index', 'indices_array'],
+	['counters', 'counters']
+];
+
 function MeshLine() {
 
 	this.positions = [];
@@ -317,32 +328,30 @@ MeshLine.prototype.process = function() {
 			index: new THREE.BufferAttribute( new Uint16Array( this.indices_array ), 1 ),
 			counters: new THREE.BufferAttribute( new Float32Array( this.counters ), 1 )
 		}
+
+		this.geometry.addAttribute( 'position', this.attributes.position );
+		this.geometry.addAttribute( 'previous', this.attributes.previous );
+		this.geometry.addAttribute( 'next', this.attributes.next );
+		this.geometry.addAttribute( 'side', this.attributes.side );
+		this.geometry.addAttribute( 'width', this.attributes.width );
+		this.geometry.addAttribute( 'uv', this.attributes.uv );
+		this.geometry.addAttribute( 'counters', this.attributes.counters );
+		this.geometry.setIndex( this.attributes.index );
 	} else {
-		this.attributes.position.copyArray(new Float32Array(this.positions));
-		this.attributes.position.needsUpdate = true;
-		this.attributes.previous.copyArray(new Float32Array(this.previous));
-		this.attributes.previous.needsUpdate = true;
-		this.attributes.next.copyArray(new Float32Array(this.next));
-		this.attributes.next.needsUpdate = true;
-		this.attributes.side.copyArray(new Float32Array(this.side));
-		this.attributes.side.needsUpdate = true;
-		this.attributes.width.copyArray(new Float32Array(this.width));
-		this.attributes.width.needsUpdate = true;
-		this.attributes.uv.copyArray(new Float32Array(this.uvs));
-		this.attributes.uv.needsUpdate = true;
-		this.attributes.index.copyArray(new Uint16Array(this.indices_array));
-		this.attributes.index.needsUpdate = true;
+		ATTRIBUTES.forEach(function ([attrName, dataName]) {
+			var data = this[dataName];
+			var attr = this.attributes[attrName];
+
+			if (attr.array.length === data.length) {
+				attr.array.set(data)
+			} else {
+				attr.array = new attr.array.constructor(data)
+				attr.count = data.length / attr.itemSize
+			}
+
+			attr.needsUpdate = true;
+		}.bind(this));
 	}
-
-	this.geometry.addAttribute( 'position', this.attributes.position );
-	this.geometry.addAttribute( 'previous', this.attributes.previous );
-	this.geometry.addAttribute( 'next', this.attributes.next );
-	this.geometry.addAttribute( 'side', this.attributes.side );
-	this.geometry.addAttribute( 'width', this.attributes.width );
-	this.geometry.addAttribute( 'uv', this.attributes.uv );
-	this.geometry.addAttribute( 'counters', this.attributes.counters );
-
-	this.geometry.setIndex( this.attributes.index );
 
 }
 
